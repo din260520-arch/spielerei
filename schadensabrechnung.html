@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schadensabrechnung 2026 – Container & Raumsysteme</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; color: #222; }
+
+  header {
+    background: #1a3a5c;
+    color: #fff;
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 2px 8px #0004;
+  }
+  header h1 { font-size: 1.3rem; font-weight: 700; }
+  header span { font-size: 0.85rem; opacity: 0.7; }
+
+  .container { max-width: 1100px; margin: 32px auto; padding: 0 16px; }
+
+  .card {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px #0001;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+  }
+  .card h2 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1a3a5c;
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e8edf3;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  label { display: block; font-size: 0.82rem; font-weight: 600; color: #555; margin-bottom: 4px; }
+  input[type=text], input[type=number], select, textarea {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid #d0d8e4;
+    border-radius: 7px;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: #1a3a5c; }
+
+  /* Position rows */
+  #positionen { margin-top: 8px; }
+  .pos-row {
+    display: grid;
+    grid-template-columns: 2.5fr 80px 1fr 36px;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .pos-row select { font-size: 0.9rem; }
+  .pos-row input[type=number] { text-align: right; }
+
+  .suggestions {
+    position: absolute;
+    background: #fff;
+    border: 1.5px solid #c0ccd8;
+    border-radius: 7px;
+    max-height: 220px;
+    overflow-y: auto;
+    z-index: 100;
+    width: 100%;
+    box-shadow: 0 4px 16px #0002;
+  }
+  .suggestions div {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 0.88rem;
+    border-bottom: 1px solid #f0f2f5;
+  }
+  .suggestions div:last-child { border-bottom: none; }
+  .suggestions div:hover, .suggestions div.active { background: #e8f0fb; }
+  .suggestions .kat { font-size: 0.75rem; color: #888; margin-left: 6px; }
+  .suggestions .preis { float: right; color: #1a3a5c; font-weight: 600; }
+  .pos-search-wrap { position: relative; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 7px;
+    font-size: 0.93rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s, transform 0.1s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: #1a3a5c; color: #fff; }
+  .btn-primary:hover { background: #24517d; }
+  .btn-secondary { background: #e8edf3; color: #1a3a5c; }
+  .btn-secondary:hover { background: #d0d8e4; }
+  .btn-danger { background: #fde8e8; color: #c0392b; border: none; padding: 6px 10px; border-radius: 6px; font-size: 0.85rem; cursor: pointer; }
+  .btn-danger:hover { background: #f5b7b1; }
+  .btn-green { background: #27ae60; color: #fff; }
+  .btn-green:hover { background: #219a52; }
+
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+
+  /* Output */
+  #output { display: none; }
+  .summen-box {
+    background: #e8f0fb;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-top: 16px;
+  }
+  .summen-box .row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 0.95rem; }
+  .summen-box .total { font-size: 1.2rem; font-weight: 700; color: #1a3a5c; border-top: 2px solid #1a3a5c; margin-top: 8px; padding-top: 8px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { background: #1a3a5c; color: #fff; padding: 9px 12px; text-align: left; font-weight: 600; }
+  td { padding: 9px 12px; border-bottom: 1px solid #e8edf3; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  td.right { text-align: right; }
+  .hinweis-cell { font-size: 0.78rem; color: #888; margin-top: 2px; }
+
+  textarea#anschreiben {
+    width: 100%;
+    min-height: 320px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    border: 1.5px solid #d0d8e4;
+    border-radius: 7px;
+    padding: 16px;
+    resize: vertical;
+  }
+
+  .badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: #e8f0fb;
+    color: #1a3a5c;
+    margin-left: 6px;
+  }
+
+  .warn { background: #fff8e1; border-left: 4px solid #f39c12; padding: 10px 14px; border-radius: 0 6px 6px 0; margin-top: 12px; font-size: 0.87rem; color: #7d6608; }
+
+  @media print {
+    body { background: #fff; }
+    header, .card:not(#output), .btn-row, #form-section { display: none !important; }
+    #output { display: block !important; box-shadow: none; }
+    .no-print { display: none !important; }
+    textarea#anschreiben { border: none; min-height: unset; }
+  }
+
+  .tag { display: inline-block; background: #e8edf3; border-radius: 4px; font-size: 0.78rem; padding: 2px 7px; color: #555; margin: 2px; cursor: pointer; }
+  .tag:hover { background: #c8d8e8; }
+  .schnellauswahl { margin-bottom: 12px; }
+  .schnellauswahl small { display: block; font-size: 0.78rem; color: #888; margin-bottom: 5px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Schadensabrechnung</h1>
+    <span>Richtpreise Container &amp; Raumsysteme · 2026</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Stammdaten -->
+  <div class="card" id="form-section">
+    <h2>Stammdaten</h2>
+    <div class="grid-2">
+      <div>
+        <label>Kundenname / Firma</label>
+        <input type="text" id="kunde" placeholder="z. B. Musterfirma GmbH">
+      </div>
+      <div>
+        <label>Objekt / Standort</label>
+        <input type="text" id="objekt" placeholder="z. B. Container A3, Baustelle Nord">
+      </div>
+      <div>
+        <label>Bearbeiter</label>
+        <input type="text" id="bearbeiter" placeholder="Name">
+      </div>
+      <div>
+        <label>Datum</label>
+        <input type="text" id="datum" id="datum">
+      </div>
+    </div>
+  </div>
+
+  <!-- Positionen -->
+  <div class="card" id="form-section2">
+    <h2>Schadhafte Positionen <span class="badge" id="pos-count">0</span></h2>
+
+    <div class="schnellauswahl">
+      <small>Schnellauswahl – häufige Schäden:</small>
+      <span class="tag" onclick="schnellAdd('Türklinke','Tür')">Türklinke</span>
+      <span class="tag" onclick="schnellAdd('Türblatt komplett','Tür')">Türblatt</span>
+      <span class="tag" onclick="schnellAdd('Türschließer','Tür')">Türschließer</span>
+      <span class="tag" onclick="schnellAdd('Heizkörper','Heizung')">Heizkörper</span>
+      <span class="tag" onclick="schnellAdd('LED-Leuchtstoffröhre','Strom')">LED-Röhre</span>
+      <span class="tag" onclick="schnellAdd('Steckdose','Strom')">Steckdose</span>
+      <span class="tag" onclick="schnellAdd('Klobrille inkl. Montage','Sanitär')">Klobrille</span>
+      <span class="tag" onclick="schnellAdd('Reinigungsstunde','Reinigung')">Reinigungsstunde</span>
+      <span class="tag" onclick="schnellAdd('Stapelstuhl','Möbel')">Stapelstuhl</span>
+      <span class="tag" onclick="schnellAdd('Fenster komplett inkl. Montage','Fenster')">Fenster</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:2.5fr 80px 1fr 36px;gap:8px;margin-bottom:4px;">
+      <div style="font-size:0.78rem;font-weight:700;color:#888;padding-left:4px;">Bezeichnung</div>
+      <div style="font-size:0.78rem;font-weight:700;color:#888;text-align:center;">Menge</div>
+      <div style="font-size:0.78rem;font-weight:700;color:#888;text-align:right;padding-right:4px;">Einzelpreis</div>
+      <div></div>
+    </div>
+
+    <div id="positionen"></div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="addRow()">＋ Position hinzufügen</button>
+    </div>
+
+    <div style="margin-top:20px;">
+      <label>Zusätzliche Montagestunden (über Pauschalen hinaus)</label>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:4px;">
+        <input type="number" id="montage-extra" value="0" min="0" step="0.5" style="width:100px;">
+        <span style="font-size:0.9rem;color:#666;">Std. × 68,00 €/Std.</span>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="berechnen()">📋 Schadensmeldung erstellen</button>
+      <button class="btn btn-secondary" onclick="zuruecksetzen()">↺ Zurücksetzen</button>
+    </div>
+  </div>
+
+  <!-- Output -->
+  <div class="card" id="output">
+    <h2>Ergebnis</h2>
+
+    <div class="btn-row no-print">
+      <button class="btn btn-green" onclick="window.print()">🖨 Drucken / als PDF speichern</button>
+      <button class="btn btn-secondary" onclick="copyAnschreiben()">📋 Anschreiben kopieren</button>
+    </div>
+
+    <div style="margin-top:20px;">
+      <h3 style="font-size:0.9rem;font-weight:700;color:#1a3a5c;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em;">Kostenaufstellung</h3>
+      <table id="ergebnis-tabelle">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Bezeichnung</th>
+            <th>Kategorie</th>
+            <th style="text-align:right;">Menge</th>
+            <th style="text-align:right;">Einzelpreis</th>
+            <th style="text-align:right;">Gesamtpreis</th>
+          </tr>
+        </thead>
+        <tbody id="ergebnis-body"></tbody>
+      </table>
+    </div>
+
+    <div class="summen-box">
+      <div class="row"><span>Zwischensumme (Teile)</span><span id="sum-teile">0,00 €</span></div>
+      <div class="row" id="sum-montage-row"><span>Montagepauschalen</span><span id="sum-montage">0,00 €</span></div>
+      <div class="row" id="sum-extra-row"><span>Zusätzliche Montage</span><span id="sum-extra">0,00 €</span></div>
+      <div class="row total"><span>Gesamtsumme (netto)</span><span id="sum-gesamt">0,00 €</span></div>
+    </div>
+
+    <div id="warnungen-box"></div>
+
+    <div style="margin-top:28px;">
+      <h3 style="font-size:0.9rem;font-weight:700;color:#1a3a5c;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em;">Kundenanschreiben (bearbeitbar)</h3>
+      <textarea id="anschreiben"></textarea>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// PREISLISTE
+// ============================================================
+const PREISLISTE = [
+  {kat:"Heizung",     bez:"Heizkörper",                              preis:179.00,  einheit:"je Stück",      hinweis:""},
+  {kat:"Tür",         bez:"Türschließer",                             preis:129.00,  einheit:"je Stück",      hinweis:"zzgl. Montage 109,00 €", montage:109},
+  {kat:"Tür",         bez:"Zylinder inkl. Montage",                  preis:34.90,   einheit:"je Stück",      hinweis:"Schlüssel fehlen: 27,90 €"},
+  {kat:"Tür",         bez:"Spezialschloss WC05/08 inkl. Montage",    preis:95.00,   einheit:"je Stück",      hinweis:""},
+  {kat:"Tür",         bez:"Türklinke",                                preis:21.40,   einheit:"je Stück",      hinweis:""},
+  {kat:"Tür",         bez:"Türschließblech",                          preis:19.80,   einheit:"je Stück",      hinweis:""},
+  {kat:"Tür",         bez:"Türblatt komplett",                        preis:279.00,  einheit:"je Stück",      hinweis:""},
+  {kat:"Tür",         bez:"Türpaneel",                                preis:595.00,  einheit:"je Stück",      hinweis:""},
+  {kat:"Tür",         bez:"Türbeschlag komplett inkl. Klinke",        preis:39.85,   einheit:"je Stück",      hinweis:""},
+  {kat:"Tür",         bez:"Tür Zarge",                                preis:279.00,  einheit:"je Stück",      hinweis:""},
+  {kat:"Tür",         bez:"Schlossaufbruch",                          preis:29.50,   einheit:"je Stück",      hinweis:"= 30 min Montage"},
+  {kat:"Tür",         bez:"Einsteckkassette Tür",                     preis:49.00,   einheit:"je Stück",      hinweis:""},
+  {kat:"Möbel",       bez:"Stapelstuhl",                              preis:35.00,   einheit:"je Stück",      hinweis:""},
+  {kat:"Möbel",       bez:"Rollcontainer",                            preis:158.00,  einheit:"je Stück",      hinweis:""},
+  {kat:"Möbel",       bez:"Spind",                                    preis:189.00,  einheit:"je Stück",      hinweis:""},
+  {kat:"Möbel",       bez:"Tisch",                                    preis:150.00,  einheit:"je Stück",      hinweis:""},
+  {kat:"Möbel",       bez:"Polsterstuhl",                             preis:39.00,   einheit:"je Stück",      hinweis:""},
+  {kat:"Möbel",       bez:"Sideboard",                                preis:249.00,  einheit:"je Stück",      hinweis:""},
+  {kat:"Möbel",       bez:"Aktenschrank",                             preis:316.00,  einheit:"je Stück",      hinweis:""},
+  {kat:"Möbel",       bez:"Drehstuhl",                                preis:98.00,   einheit:"je Stück",      hinweis:""},
+  {kat:"Möbel",       bez:"Etagenbett",                               preis:249.00,  einheit:"je Stück",      hinweis:""},
+  {kat:"Möbel",       bez:"Möbelentsorgung",                          preis:59.00,   einheit:"je m³",         hinweis:""},
+  {kat:"Möbel",       bez:"Matratzenentsorgung",                      preis:29.00,   einheit:"je Stück",      hinweis:""},
+  {kat:"Sanitär",     bez:"Bodenablaufgitter",                        preis:36.00,   einheit:"je Stück",      hinweis:""},
+  {kat:"Sanitär",     bez:"Seifenhalter",                             preis:19.40,   einheit:"je Stück",      hinweis:""},
+  {kat:"Sanitär",     bez:"Seifenspender",                            preis:45.00,   einheit:"je Stück",      hinweis:""},
+  {kat:"Sanitär",     bez:"Armatur Waschbecken Einhebelmischer",      preis:45.00,   einheit:"je Stück",      hinweis:""},
+  {kat:"Sanitär",     bez:"Armatur Dusche Einhebelmischer Brause",    preis:45.00,   einheit:"je Stück",      hinweis:""},
+  {kat:"Sanitär",     bez:"Klobrille",                                preis:21.20,   einheit:"je Stück",      hinweis:""},
+  {kat:"Sanitär",     bez:"Klobrille inkl. Montage",                  preis:35.00,   einheit:"je Stück",      hinweis:""},
+  {kat:"Sanitär",     bez:"Toilettenschüssel",                        preis:119.00,  einheit:"je Stück",      hinweis:""},
+  {kat:"Sanitär",     bez:"Duschstange",                              preis:25.00,   einheit:"je Stück",      hinweis:""},
+  {kat:"Sanitär",     bez:"Duschkopfset inkl. Montage",               preis:59.00,   einheit:"je Stück",      hinweis:""},
+  {kat:"Sanitär",     bez:"Waschbecken",                              preis:149.00,  einheit:"je Stück",      hinweis:""},
+  {kat:"Sanitär",     bez:"Mischbatterie",                            preis:68.50,   einheit:"je Stück",      hinweis:""},
+  {kat:"Sanitär",     bez:"Urinalschüssel",                           preis:139.00,  einheit:"je Stück",      hinweis:""},
+  {kat:"Sanitär",     bez:"Schamwand / Toilettenwand",                preis:189.00,  einheit:"je Stück",      hinweis:""},
+  {kat:"Sanitär",     bez:"Druckminderer",                            preis:192.00,  einheit:"je Stück",      hinweis:"zzgl. 3 Std. Montage"},
+  {kat:"Sanitär",     bez:"Schauglas Druckminderer",                  preis:25.00,   einheit:"je Stück",      hinweis:""},
+  {kat:"Sanitär",     bez:"Urinal-Druckspüler",                       preis:65.00,   einheit:"je Stück",      hinweis:""},
+  {kat:"Sanitär",     bez:"Falthandtuchspender",                      preis:39.90,   einheit:"je Stück",      hinweis:""},
+  {kat:"Sanitär",     bez:"Spülkasten",                               preis:79.00,   einheit:"je Stück",      hinweis:""},
+  {kat:"Sanitär",     bez:"Eckventil",                                preis:25.00,   einheit:"je Stück",      hinweis:""},
+  {kat:"Sanitär",     bez:"Hauswasserwerk",                           preis:790.00,  einheit:"je Stück",      hinweis:"zzgl. 215 € An- und Abfahrt"},
+  {kat:"Küche",       bez:"Miniküche komplett",                       preis:698.00,  einheit:"je Stück",      hinweis:""},
+  {kat:"Küche",       bez:"Kühlschrank",                              preis:185.00,  einheit:"je Stück",      hinweis:""},
+  {kat:"Strom",       bez:"Steckdosenabdeckung",                      preis:7.00,    einheit:"je Stück",      hinweis:""},
+  {kat:"Strom",       bez:"Steckdose",                                preis:15.90,   einheit:"je Stück",      hinweis:""},
+  {kat:"Strom",       bez:"Lichtschalter",                            preis:28.80,   einheit:"je Stück",      hinweis:""},
+  {kat:"Strom",       bez:"LED-Leuchtstoffröhre",                     preis:22.90,   einheit:"je Stück",      hinweis:"Universal"},
+  {kat:"Strom",       bez:"LED-Lampe für Leuchtstoffröhren",          preis:73.90,   einheit:"je Stück",      hinweis:""},
+  {kat:"Strom",       bez:"FI-Schalter",                              preis:72.00,   einheit:"je Stück",      hinweis:""},
+  {kat:"Strom",       bez:"Aufputzdose 32A männlich",                 preis:36.00,   einheit:"je Stück",      hinweis:""},
+  {kat:"Strom/San.",  bez:"Heißwasserspeicher 5 ltr. Untertisch",     preis:89.00,   einheit:"je Stück",      hinweis:""},
+  {kat:"Strom/San.",  bez:"Durchlauferhitzer",                        preis:169.00,  einheit:"je Stück",      hinweis:""},
+  {kat:"Klima",       bez:"Lüfter",                                   preis:78.50,   einheit:"je Stück",      hinweis:""},
+  {kat:"Rollo",       bez:"Rollladenabdeckleiste inkl. Montage",      preis:50.00,   einheit:"je Stück",      hinweis:""},
+  {kat:"Rollo",       bez:"Rolladen 15× Lamellen",                    preis:180.00,  einheit:"je Stück",      hinweis:"á 12 € pro Lamelle"},
+  {kat:"Rollo",       bez:"Rolladengurt",                             preis:19.00,   einheit:"je Stück",      hinweis:""},
+  {kat:"Rollo",       bez:"Rollo-Kassette",                           preis:75.00,   einheit:"je Stück",      hinweis:""},
+  {kat:"Fenster",     bez:"Fenster komplett inkl. Montage",           preis:365.00,  einheit:"je Stück",      hinweis:"inkl. 2 Std. Montage"},
+  {kat:"Fenster",     bez:"Fensterpaneele komplett",                  preis:945.00,  einheit:"je Stück",      hinweis:""},
+  {kat:"Fenster",     bez:"Fensterflügel Klima",                      preis:78.00,   einheit:"je Stück",      hinweis:""},
+  {kat:"Windfang",    bez:"Windfang komplett",                        preis:996.00,  einheit:"je Stück",      hinweis:""},
+  {kat:"Paneel",      bez:"Standardpaneel",                           preis:386.00,  einheit:"je Stück",      hinweis:""},
+  {kat:"Montage",     bez:"Montagestunde",                            preis:68.00,   einheit:"je Stunde",     hinweis:""},
+  {kat:"Reinigung",   bez:"Reinigungsstunde",                         preis:59.00,   einheit:"je Stunde",     hinweis:""},
+  {kat:"Reinigung",   bez:"Starke Nikotinverschmutzung",              preis:110.00,  einheit:"je Reinigung",  hinweis:"nach Aufwand, ab"},
+  {kat:"Reinigung",   bez:"Graffitientfernung / Außenputz",           preis:59.00,   einheit:"je Std./m²",   hinweis:""},
+  {kat:"Reinigung",   bez:"Klebereste entfernen",                     preis:100.00,  einheit:"je Reinigung",  hinweis:""},
+  {kat:"Reinigung",   bez:"Sonderreinigung",                          preis:125.00,  einheit:"je Reinigung",  hinweis:"ab"},
+];
+
+// ============================================================
+// HILFSFUNKTIONEN
+// ============================================================
+function fmt(n) {
+  return n.toFixed(2).replace('.', ',') + ' €';
+}
+
+function heute() {
+  const d = new Date();
+  return d.toLocaleDateString('de-DE', {day:'2-digit',month:'2-digit',year:'numeric'});
+}
+
+// Einfache Fuzzy-Suche
+function suche(query) {
+  if (!query || query.length < 2) return [];
+  const q = query.toLowerCase();
+  const tokens = q.split(/\s+/);
+  return PREISLISTE
+    .map(e => {
+      const bez = e.bez.toLowerCase();
+      const kat = e.kat.toLowerCase();
+      let score = 0;
+      if (bez === q) score = 100;
+      else if (bez.startsWith(q)) score = 80;
+      else if (bez.includes(q)) score = 60;
+      else {
+        const hit = tokens.filter(t => bez.includes(t) || kat.includes(t)).length;
+        score = (hit / tokens.length) * 40;
+      }
+      return { e, score };
+    })
+    .filter(x => x.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 8)
+    .map(x => x.e);
+}
+
+// ============================================================
+// ROW MANAGEMENT
+// ============================================================
+let rowId = 0;
+
+function addRow(bez = '', kat = '', preis = null) {
+  rowId++;
+  const id = rowId;
+  const div = document.createElement('div');
+  div.className = 'pos-row';
+  div.id = 'row-' + id;
+
+  const eintrag = bez ? PREISLISTE.find(e => e.bez === bez) : null;
+  const preisWert = eintrag ? eintrag.preis : (preis || '');
+
+  div.innerHTML = `
+    <div class="pos-search-wrap">
+      <input type="text" class="bez-input" value="${bez}" placeholder="Bezeichnung suchen…"
+        oninput="onBezInput(${id}, this.value)"
+        onblur="hideSuggestions(${id})"
+        onfocus="onBezInput(${id}, this.value)"
+        onkeydown="onBezKey(event, ${id})">
+      <div class="suggestions" id="sug-${id}" style="display:none;"></div>
+    </div>
+    <input type="number" class="menge-input" value="1" min="1" step="1"
+      onchange="updateCount()">
+    <input type="number" class="preis-input" value="${preisWert}" min="0" step="0.01"
+      style="text-align:right;" placeholder="Preis">
+    <button class="btn-danger" onclick="removeRow(${id})">✕</button>
+  `;
+  document.getElementById('positionen').appendChild(div);
+  updateCount();
+  div.querySelector('.bez-input').focus();
+}
+
+function removeRow(id) {
+  const el = document.getElementById('row-' + id);
+  if (el) el.remove();
+  updateCount();
+}
+
+function updateCount() {
+  const n = document.querySelectorAll('.pos-row').length;
+  document.getElementById('pos-count').textContent = n;
+}
+
+function schnellAdd(bez, kat) {
+  addRow(bez, kat);
+}
+
+// ============================================================
+// AUTOCOMPLETE
+// ============================================================
+let activeSugIdx = {};
+
+function onBezInput(id, val) {
+  const box = document.getElementById('sug-' + id);
+  const results = suche(val);
+  if (!results.length) { box.style.display = 'none'; return; }
+  activeSugIdx[id] = -1;
+  box.innerHTML = results.map((e, i) =>
+    `<div onmousedown="selectSug(${id}, ${i})" id="sug-${id}-${i}">
+      ${e.bez} <span class="kat">[${e.kat}]</span>
+      <span class="preis">${fmt(e.preis)}</span>
+    </div>`
+  ).join('');
+  box._results = results;
+  box.style.display = 'block';
+}
+
+function hideSuggestions(id) {
+  setTimeout(() => {
+    const box = document.getElementById('sug-' + id);
+    if (box) box.style.display = 'none';
+  }, 180);
+}
+
+function selectSug(id, idx) {
+  const box = document.getElementById('sug-' + id);
+  const e = box._results[idx];
+  const row = document.getElementById('row-' + id);
+  row.querySelector('.bez-input').value = e.bez;
+  row.querySelector('.preis-input').value = e.preis.toFixed(2);
+  box.style.display = 'none';
+}
+
+function onBezKey(evt, id) {
+  const box = document.getElementById('sug-' + id);
+  if (box.style.display === 'none') return;
+  const items = box.querySelectorAll('div');
+  if (!items.length) return;
+  let idx = activeSugIdx[id] || -1;
+  if (evt.key === 'ArrowDown') { idx = Math.min(idx + 1, items.length - 1); evt.preventDefault(); }
+  else if (evt.key === 'ArrowUp') { idx = Math.max(idx - 1, 0); evt.preventDefault(); }
+  else if (evt.key === 'Enter' && idx >= 0) { selectSug(id, idx); evt.preventDefault(); return; }
+  else if (evt.key === 'Escape') { box.style.display = 'none'; return; }
+  items.forEach((el, i) => el.classList.toggle('active', i === idx));
+  activeSugIdx[id] = idx;
+}
+
+// ============================================================
+// BERECHNUNG
+// ============================================================
+function berechnen() {
+  const rows = document.querySelectorAll('.pos-row');
+  if (!rows.length) { alert('Bitte mindestens eine Position hinzufügen.'); return; }
+
+  const positionen = [];
+  rows.forEach(row => {
+    const bez = row.querySelector('.bez-input').value.trim();
+    const menge = parseFloat(row.querySelector('.menge-input').value) || 1;
+    const preis = parseFloat(row.querySelector('.preis-input').value) || 0;
+    if (!bez) return;
+    const eintrag = PREISLISTE.find(e => e.bez === bez) || {};
+    positionen.push({
+      bez,
+      kat: eintrag.kat || '–',
+      menge,
+      preis,
+      einheit: eintrag.einheit || 'je Stück',
+      hinweis: eintrag.hinweis || '',
+      montage: eintrag.montage || 0,
+    });
+  });
+
+  const montageExtra = parseFloat(document.getElementById('montage-extra').value) || 0;
+
+  // Summen
+  let sumTeile = 0, sumMontage = 0;
+  positionen.forEach(p => {
+    sumTeile += p.preis * p.menge;
+    sumMontage += (p.montage || 0) * p.menge;
+  });
+  const sumExtraEuro = montageExtra * 68;
+  const gesamt = sumTeile + sumMontage + sumExtraEuro;
+
+  // Tabelle
+  const tbody = document.getElementById('ergebnis-body');
+  tbody.innerHTML = '';
+  positionen.forEach((p, i) => {
+    const gesP = p.preis * p.menge;
+    let hinweisHtml = '';
+    if (p.hinweis) hinweisHtml += `<div class="hinweis-cell">ℹ ${p.hinweis}</div>`;
+    if (p.montage) hinweisHtml += `<div class="hinweis-cell">+ Montage: ${fmt(p.montage)} × ${p.menge} = ${fmt(p.montage * p.menge)}</div>`;
+    tbody.innerHTML += `
+      <tr>
+        <td>${i+1}</td>
+        <td>${p.bez}${hinweisHtml}</td>
+        <td>${p.kat}</td>
+        <td class="right">${p.menge}</td>
+        <td class="right">${fmt(p.preis)}</td>
+        <td class="right"><strong>${fmt(gesP)}</strong></td>
+      </tr>`;
+  });
+
+  // Montage-Extra-Zeile
+  if (montageExtra > 0) {
+    tbody.innerHTML += `
+      <tr style="background:#f8fafc;">
+        <td>–</td>
+        <td>Zusätzliche Montagestunden</td>
+        <td>Montage</td>
+        <td class="right">${montageExtra} Std.</td>
+        <td class="right">68,00 €/Std.</td>
+        <td class="right"><strong>${fmt(sumExtraEuro)}</strong></td>
+      </tr>`;
+  }
+
+  document.getElementById('sum-teile').textContent = fmt(sumTeile);
+  document.getElementById('sum-montage').textContent = fmt(sumMontage);
+  document.getElementById('sum-extra').textContent = fmt(sumExtraEuro);
+  document.getElementById('sum-gesamt').textContent = fmt(gesamt);
+  document.getElementById('sum-montage-row').style.display = sumMontage > 0 ? '' : 'none';
+  document.getElementById('sum-extra-row').style.display = sumExtraEuro > 0 ? '' : 'none';
+
+  // Warnungen
+  const wBox = document.getElementById('warnungen-box');
+  const ohnePreis = positionen.filter(p => p.preis === 0);
+  wBox.innerHTML = ohnePreis.map(p =>
+    `<div class="warn">⚠ Kein Preis für <strong>${p.bez}</strong> – bitte manuell ergänzen.</div>`
+  ).join('');
+
+  // Anschreiben
+  const kunde = document.getElementById('kunde').value || 'Sehr geehrte Damen und Herren';
+  const objekt = document.getElementById('objekt').value || 'das oben genannte Objekt';
+  const datum = document.getElementById('datum').value || heute();
+  const bearbeiter = document.getElementById('bearbeiter').value || '';
+
+  const posListe = positionen.map(p =>
+    `   – ${p.bez} (${p.menge} ${p.einheit.replace('je ','')}): ${fmt(p.preis * p.menge)}`
+  ).join('\n');
+
+  document.getElementById('anschreiben').value =
+`Datum: ${datum}
+Betreff: Schadensmeldung – Objekt: ${objekt}
+
+Sehr geehrte Damen und Herren,
+
+im Rahmen der Abnahme bzw. Rückgabe des Objekts „${objekt}" wurden folgende Beschädigungen festgestellt, die über den vertraglich vereinbarten Normalverschleiß hinausgehen. Wir bitten Sie, die nachstehend aufgeführten Kosten zu tragen.
+
+Schadensübersicht:
+${posListe}
+
+──────────────────────────────────
+Gesamtbetrag (netto): ${fmt(gesamt)}
+──────────────────────────────────
+
+Wir bitten Sie, den ausstehenden Betrag innerhalb von 14 Tagen auf unser Ihnen bekanntes Konto zu überweisen. Bei Rückfragen stehen wir Ihnen gerne zur Verfügung.
+
+Mit freundlichen Grüßen
+
+${bearbeiter || '[Name / Firmenstempel]'}`;
+
+  document.getElementById('output').style.display = 'block';
+  document.getElementById('output').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ============================================================
+// AKTIONEN
+// ============================================================
+function zuruecksetzen() {
+  if (!confirm('Alle Eingaben zurücksetzen?')) return;
+  document.getElementById('positionen').innerHTML = '';
+  document.getElementById('kunde').value = '';
+  document.getElementById('objekt').value = '';
+  document.getElementById('bearbeiter').value = '';
+  document.getElementById('datum').value = heute();
+  document.getElementById('montage-extra').value = '0';
+  document.getElementById('output').style.display = 'none';
+  updateCount();
+}
+
+function copyAnschreiben() {
+  const ta = document.getElementById('anschreiben');
+  ta.select();
+  document.execCommand('copy');
+  alert('Anschreiben in die Zwischenablage kopiert.');
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.getElementById('datum').value = heute();
+addRow(); // eine leere Zeile zum Start
+</script>
+</body>
+</html>
