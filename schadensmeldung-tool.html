@@ -1176,6 +1176,7 @@ const Calc = (() => {
         bez,
         kat:     entry.kat     || '–',
         menge,
+        ep:      preis,
         preis,
         einheit: entry.einheit || 'je Stück',
         hinweis: entry.hinweis || '',
@@ -1270,9 +1271,14 @@ const Output = (() => {
       ? `Sehr geehrte/r ${ansprech},`
       : 'Sehr geehrte Damen und Herren,';
 
-    const posListe = positionen.map(p =>
-      `   ${String(positionen.indexOf(p)+1).padStart(2,'0')}. ${p.bez.padEnd(44)} ${fmt(p.preis * p.menge).padStart(12)}`
-    ).join('\n');
+    const posListe = positionen.map((p, i) => {
+      const pos    = String(i+1).padStart(2,'0');
+      const bez    = p.bez.padEnd(36);
+      const menge  = String(p.menge).padStart(3);
+      const ep     = fmt(p.ep !== undefined ? p.ep : p.preis).padStart(10);
+      const gesamt = fmt(p.preis * p.menge).padStart(12);
+      return `   ${pos}. ${bez} ${menge} × ${ep}  =  ${gesamt}`;
+    }).join('\n');
 
     document.getElementById('anschreiben').value =
 `Datum:          ${datum}
