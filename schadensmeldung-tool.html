@@ -823,9 +823,7 @@ textarea#anschreiben:focus { border-color: var(--b-slate); }
       <div class="row"><span>Teile / Ersatzteile</span><strong id="sum-teile">0,00 €</strong></div>
       <div class="row" id="sum-montage-row"><span>Montagepauschalen</span><strong id="sum-montage">0,00 €</strong></div>
       <div class="row" id="sum-extra-row"><span>Zusätzliche Montage</span><strong id="sum-extra">0,00 €</strong></div>
-      <div class="row divider"><span>Nettobetrag</span><strong id="sum-netto">0,00 €</strong></div>
-      <div class="row"><span>MwSt. 19 %</span><strong id="sum-mwst">0,00 €</strong></div>
-      <div class="row total"><span>GESAMTBETRAG BRUTTO</span><span id="sum-brutto">0,00 €</span></div>
+      <div class="row divider total"><span>GESAMTBETRAG (NETTO)</span><span id="sum-gesamt">0,00 €</span></div>
     </div>
 
     <div id="warnungen-box"></div>
@@ -1201,8 +1199,6 @@ const Calc = (() => {
     });
     const sumExtraEuro = montageExtraStd * 68;
     const gesamt = sumTeile + sumMontage + sumExtraEuro;
-    const mwst   = gesamt * 0.19;
-    const brutto = gesamt + mwst;
 
     // ── Result table ──────────────────────────────────────
     const tbody = document.getElementById('ergebnis-body');
@@ -1238,9 +1234,7 @@ const Calc = (() => {
     document.getElementById('sum-teile').textContent   = fmt(sumTeile);
     document.getElementById('sum-montage').textContent = fmt(sumMontage);
     document.getElementById('sum-extra').textContent   = fmt(sumExtraEuro);
-    document.getElementById('sum-netto').textContent   = fmt(gesamt);
-    document.getElementById('sum-mwst').textContent    = fmt(mwst);
-    document.getElementById('sum-brutto').textContent  = fmt(brutto);
+    document.getElementById('sum-gesamt').textContent  = fmt(gesamt);
     document.getElementById('sum-montage-row').style.display = sumMontage > 0 ? '' : 'none';
     document.getElementById('sum-extra-row').style.display   = sumExtraEuro > 0 ? '' : 'none';
 
@@ -1251,7 +1245,7 @@ const Calc = (() => {
     ).join('');
 
     // ── Letter ────────────────────────────────────────────
-    Output.buildLetter(positionen, gesamt, mwst, brutto);
+    Output.buildLetter(positionen, gesamt);
 
     document.getElementById('output').style.display = 'block';
     document.getElementById('output').scrollIntoView({ behavior: 'smooth' });
@@ -1264,7 +1258,7 @@ const Calc = (() => {
    MODULE: Output  – Letter generation + copy
    ───────────────────────────────────────────────────────── */
 const Output = (() => {
-  function buildLetter(positionen, netto, mwst, brutto) {
+  function buildLetter(positionen, netto) {
     const kunde        = document.getElementById('kunde').value        || '[Firmenname]';
     const ansprech     = document.getElementById('ansprechpartner').value;
     const mietvertrNr  = document.getElementById('mietvertragsnr').value || '[MV-Nr.]';
@@ -1301,13 +1295,10 @@ Schadensübersicht:
 ${posListe}
 
 ──────────────────────────────────────────────────────────
-Nettobetrag:            ${fmt(netto).padStart(12)}
-MwSt. 19 %:             ${fmt(mwst).padStart(12)}
-──────────────────────────────────────────────────────────
-Gesamtbetrag (brutto):  ${fmt(brutto).padStart(12)}
+Gesamtbetrag (netto):   ${fmt(netto).padStart(12)}
 ──────────────────────────────────────────────────────────
 
-Wir bitten Sie, die dargestellten Schäden und die damit verbundenen Kosten in Höhe von ${fmt(brutto)} (brutto) zu prüfen und uns Ihre schriftliche Schadensanerkennung bis zum ${acknowledgeDeadline(datum)} zukommen zu lassen.
+Wir bitten Sie, die dargestellten Schäden und die damit verbundenen Kosten in Höhe von ${fmt(netto)} (netto) zu prüfen und uns Ihre schriftliche Schadensanerkennung bis zum ${acknowledgeDeadline(datum)} zukommen zu lassen.
 
 Sofern Sie Einwände oder Rückfragen zu einzelnen Positionen haben, stehen wir Ihnen selbstverständlich gerne für ein klärendes Gespräch zur Verfügung. Bitte nehmen Sie in diesem Fall Kontakt mit ${bearbeiter} auf.
 
@@ -1315,14 +1306,7 @@ Wir danken für Ihre Kooperation und eine zeitnahe Rückmeldung.
 
 Mit freundlichen Grüßen
 
-${bearbeiter}
-Carl Beutlhauser Baumaschinen GmbH
-Raumsysteme / Schadensabwicklung
-
-─────────────────────────────────────────────────────────
-Preise gemäß Richtpreisliste 2026 – kundenbezogen zu endprüfen.
-AGB: Besondere Mietbedingungen für Raumsysteme, Stand Juni 2024.
-─────────────────────────────────────────────────────────`;
+${bearbeiter}`;
   }
 
   function acknowledgeDeadline(datumStr) {
