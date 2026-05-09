@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preisvergleich – Günstigstes Produkt finden</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; color: #222; }
+
+  header {
+    background: #1a3a5c;
+    color: #fff;
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 2px 8px #0004;
+  }
+  header h1 { font-size: 1.3rem; font-weight: 700; }
+  header span { font-size: 0.85rem; opacity: 0.7; }
+
+  .container { max-width: 1100px; margin: 32px auto; padding: 0 16px; }
+
+  .card {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px #0001;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+  }
+  .card h2 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1a3a5c;
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e8edf3;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* Suchfeld */
+  .search-row {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+  }
+  .search-row input {
+    flex: 1;
+    padding: 13px 16px;
+    border: 2px solid #d0d8e4;
+    border-radius: 8px;
+    font-size: 1.05rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-row input:focus { border-color: #1a3a5c; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 22px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s, transform 0.1s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: #1a3a5c; color: #fff; font-size: 1.05rem; padding: 13px 28px; }
+  .btn-primary:hover { background: #24517d; }
+  .btn-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    background: #e8f0fb;
+    color: #1a3a5c;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-link:hover { background: #d0dff5; }
+
+  /* Quellen-Auswahl */
+  .sources-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .source-chip {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .source-chip input[type=checkbox] { display: none; }
+  .source-chip.active { color: #fff; }
+  .source-chip:not(.active) { background: #f0f2f5; color: #666; border-color: #d0d8e4; }
+
+  /* Spinner */
+  .spinner-wrap {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 0;
+    gap: 16px;
+    color: #666;
+  }
+  .spinner {
+    width: 44px;
+    height: 44px;
+    border: 4px solid #e8edf3;
+    border-top-color: #1a3a5c;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Statistik-Bar */
+  .stats-bar {
+    display: none;
+    gap: 24px;
+    background: #e8f0fb;
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .stat-item { display: flex; flex-direction: column; gap: 2px; }
+  .stat-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: #888; font-weight: 600; }
+  .stat-value { font-size: 1.15rem; font-weight: 700; color: #1a3a5c; }
+  .stat-value.green { color: #219a52; }
+  .stat-sep { width: 1px; background: #c0ccd8; align-self: stretch; }
+
+  /* Filter */
+  .filter-row {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .filter-row label { font-size: 0.82rem; font-weight: 600; color: #555; white-space: nowrap; }
+  .filter-row input[type=number] {
+    width: 90px;
+    padding: 6px 10px;
+    border: 1.5px solid #d0d8e4;
+    border-radius: 6px;
+    font-size: 0.9rem;
+  }
+  .filter-row select {
+    padding: 6px 10px;
+    border: 1.5px solid #d0d8e4;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    background: #fff;
+  }
+
+  /* Hidden Gems */
+  .gems-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+    margin-bottom: 4px;
+  }
+  .gem-card {
+    border: 2px solid #27ae60;
+    border-radius: 10px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: #f6fef9;
+    position: relative;
+  }
+  .gem-badge {
+    position: absolute;
+    top: -11px;
+    left: 12px;
+    background: #27ae60;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.04em;
+  }
+  .gem-img {
+    width: 100%;
+    height: 100px;
+    object-fit: contain;
+    background: #f8f8f8;
+    border-radius: 6px;
+  }
+  .gem-title {
+    font-size: 0.88rem;
+    font-weight: 600;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.35;
+  }
+  .gem-price { font-size: 1.4rem; font-weight: 700; color: #219a52; }
+  .gem-shop { font-size: 0.75rem; color: #888; }
+
+  /* Ergebnis-Tabelle */
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  thead th {
+    background: #f0f2f5;
+    color: #1a3a5c;
+    font-weight: 700;
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 2px solid #e8edf3;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  thead th:hover { background: #e0e8f5; }
+  thead th.sorted-asc::after { content: " ↑"; }
+  thead th.sorted-desc::after { content: " ↓"; }
+  tbody tr { border-bottom: 1px solid #f0f2f5; transition: background 0.1s; }
+  tbody tr:hover { background: #f8faff; }
+  td { padding: 10px 12px; vertical-align: middle; }
+  .rank-cell { font-size: 0.78rem; color: #aaa; font-weight: 700; width: 32px; text-align: center; }
+  .rank-1 { color: #f39c12; font-size: 1.1rem; }
+  .thumb { width: 44px; height: 44px; object-fit: contain; border-radius: 5px; background: #f5f5f5; }
+  .thumb-ph { width: 44px; height: 44px; background: #e8edf3; border-radius: 5px; display: flex; align-items: center; justify-content: center; color: #bbb; font-size: 1.3rem; }
+  .title-cell { max-width: 320px; }
+  .title-text { font-weight: 500; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.35; }
+  .cond-badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; background: #e8edf3; color: #666; font-weight: 600; display: inline-block; margin-top: 3px; }
+  .cond-badge.gebraucht { background: #fde8c8; color: #a04000; }
+  .price-cell { white-space: nowrap; }
+  .price-main { font-size: 1.05rem; font-weight: 700; color: #1a3a5c; }
+  .price-ship { font-size: 0.75rem; color: #888; }
+  .price-total { font-size: 0.8rem; font-weight: 600; color: #333; margin-top: 1px; }
+  .price-best .price-main { color: #219a52; }
+  .source-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .no-results {
+    text-align: center;
+    padding: 40px;
+    color: #888;
+    font-size: 1rem;
+  }
+
+  #results-section { display: none; }
+  #gems-section { display: none; }
+
+  /* Responsiv */
+  @media (max-width: 700px) {
+    .search-row { flex-direction: column; }
+    .card { padding: 18px; }
+    .gems-grid { grid-template-columns: 1fr 1fr; }
+    td:nth-child(5), th:nth-child(5) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2">
+    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    <line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>
+  </svg>
+  <div>
+    <h1>Preisvergleich</h1>
+    <span>Günstigstes Produkt finden – mehrere Quellen gleichzeitig</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Suche -->
+  <div class="card">
+    <div class="search-row">
+      <input type="text" id="query" placeholder="Produkt suchen, z.B. &quot;Kaffeemaschine&quot; oder &quot;Samsung TV 55&quot;"
+        autofocus autocomplete="off" />
+      <button class="btn btn-primary" onclick="doSearch()">Suchen</button>
+    </div>
+
+    <div class="sources-row" id="sources-row">
+      <!-- Wird per JS befüllt -->
+    </div>
+  </div>
+
+  <!-- Spinner -->
+  <div class="spinner-wrap" id="spinner">
+    <div class="spinner"></div>
+    <span id="spinner-text">Durchsuche Quellen…</span>
+  </div>
+
+  <!-- Statistik -->
+  <div class="stats-bar" id="stats-bar">
+    <div class="stat-item">
+      <span class="stat-label">Günstigster</span>
+      <span class="stat-value green" id="stat-min">–</span>
+    </div>
+    <div class="stat-sep"></div>
+    <div class="stat-item">
+      <span class="stat-label">Median</span>
+      <span class="stat-value" id="stat-med">–</span>
+    </div>
+    <div class="stat-sep"></div>
+    <div class="stat-item">
+      <span class="stat-label">Teuerster</span>
+      <span class="stat-value" id="stat-max">–</span>
+    </div>
+    <div class="stat-sep"></div>
+    <div class="stat-item">
+      <span class="stat-label">Ergebnisse</span>
+      <span class="stat-value" id="stat-count">–</span>
+    </div>
+    <div class="stat-sep"></div>
+    <div class="stat-item">
+      <span class="stat-label">Dauer</span>
+      <span class="stat-value" id="stat-dur">–</span>
+    </div>
+  </div>
+
+  <!-- Hidden Gems -->
+  <div id="gems-section">
+    <div class="card">
+      <h2>Geheimtipps – günstig &amp; weniger bekannt</h2>
+      <div class="gems-grid" id="gems-grid"></div>
+    </div>
+  </div>
+
+  <!-- Ergebnisliste -->
+  <div id="results-section">
+    <div class="card">
+      <h2 id="results-title">Alle Ergebnisse</h2>
+
+      <div class="filter-row">
+        <label>Preis von</label>
+        <input type="number" id="filter-min" placeholder="0" min="0" step="1" oninput="applyFilters()">
+        <label>bis</label>
+        <input type="number" id="filter-max" placeholder="max" min="0" step="1" oninput="applyFilters()">
+        <label style="margin-left:12px">Zustand</label>
+        <select id="filter-cond" onchange="applyFilters()">
+          <option value="">Alle</option>
+          <option value="neu">Neu</option>
+          <option value="gebraucht">Gebraucht</option>
+        </select>
+      </div>
+
+      <div id="table-wrap">
+        <table id="results-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th></th>
+              <th data-col="title" onclick="sortBy('title')">Produkt</th>
+              <th data-col="total_price" onclick="sortBy('total_price')" class="sorted-asc">Gesamtpreis</th>
+              <th data-col="price" onclick="sortBy('price')">Preis</th>
+              <th data-col="source" onclick="sortBy('source')">Quelle</th>
+              <th>Link</th>
+            </tr>
+          </thead>
+          <tbody id="results-body"></tbody>
+        </table>
+        <div class="no-results" id="no-results" style="display:none">
+          Keine Ergebnisse für diese Filter. Bitte Filter anpassen.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+let allResults = [];
+let sourceColors = {};
+let sortCol = 'total_price';
+let sortAsc = true;
+
+// ---------------------------------------------------------------------------
+// Init: Quellen laden
+// ---------------------------------------------------------------------------
+async function loadSources() {
+  try {
+    const r = await fetch('/api/sources');
+    const data = await r.json();
+    const row = document.getElementById('sources-row');
+    data.sources.forEach(src => {
+      sourceColors[src.id] = src.color;
+      const chip = document.createElement('label');
+      chip.className = 'source-chip' + (src.enabled ? ' active' : '');
+      if (src.enabled) chip.style.background = src.color + 'cc';
+      chip.style.borderColor = src.color;
+      chip.dataset.id = src.id;
+      chip.innerHTML = `<input type="checkbox" value="${src.id}" ${src.enabled ? 'checked' : ''}>
+        ${src.name}`;
+      chip.addEventListener('click', () => {
+        const cb = chip.querySelector('input');
+        cb.checked = !cb.checked;
+        chip.classList.toggle('active', cb.checked);
+        chip.style.background = cb.checked ? src.color + 'cc' : '';
+      });
+      row.appendChild(chip);
+    });
+  } catch (e) {
+    console.warn('Quellen konnten nicht geladen werden', e);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Suche
+// ---------------------------------------------------------------------------
+async function doSearch() {
+  const q = document.getElementById('query').value.trim();
+  if (!q) { document.getElementById('query').focus(); return; }
+
+  const sources = [...document.querySelectorAll('#sources-row input:checked')]
+    .map(cb => cb.value).join(',');
+
+  showSpinner(true);
+  hideResults();
+
+  try {
+    const url = `/api/search?q=${encodeURIComponent(q)}&sources=${sources}`;
+    const r = await fetch(url);
+    const data = await r.json();
+    if (data.error) { alert(data.error); return; }
+    allResults = data.results || [];
+    renderStats(data.stats, data.duration_ms);
+    renderGems(data.hidden_gems || []);
+    renderResults(allResults);
+  } catch (e) {
+    alert('Fehler bei der Suche: ' + e.message);
+  } finally {
+    showSpinner(false);
+  }
+}
+
+// Enter-Taste
+document.addEventListener('DOMContentLoaded', () => {
+  loadSources();
+  document.getElementById('query').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doSearch();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// UI-Hilfsfunktionen
+// ---------------------------------------------------------------------------
+function showSpinner(on) {
+  document.getElementById('spinner').style.display = on ? 'flex' : 'none';
+}
+
+function hideResults() {
+  document.getElementById('results-section').style.display = 'none';
+  document.getElementById('gems-section').style.display = 'none';
+  document.getElementById('stats-bar').style.display = 'none';
+}
+
+function fmt(price) {
+  return price.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+}
+
+// ---------------------------------------------------------------------------
+// Statistik-Bar
+// ---------------------------------------------------------------------------
+function renderStats(stats, durationMs) {
+  if (!stats || stats.count === 0) return;
+  document.getElementById('stat-min').textContent = fmt(stats.min);
+  document.getElementById('stat-med').textContent = fmt(stats.median);
+  document.getElementById('stat-max').textContent = fmt(stats.max);
+  document.getElementById('stat-count').textContent = stats.count;
+  document.getElementById('stat-dur').textContent = (durationMs / 1000).toFixed(1) + ' s';
+  document.getElementById('stats-bar').style.display = 'flex';
+}
+
+// ---------------------------------------------------------------------------
+// Geheimtipps
+// ---------------------------------------------------------------------------
+function renderGems(gems) {
+  const grid = document.getElementById('gems-grid');
+  const section = document.getElementById('gems-section');
+  grid.innerHTML = '';
+  if (!gems.length) { section.style.display = 'none'; return; }
+
+  gems.forEach(g => {
+    const card = document.createElement('div');
+    card.className = 'gem-card';
+    const img = g.image_url
+      ? `<img src="${g.image_url}" class="gem-img" onerror="this.style.display='none'" loading="lazy">`
+      : '';
+    const color = sourceColors[g.source] || '#888';
+    card.innerHTML = `
+      <span class="gem-badge">Geheimtipp</span>
+      ${img}
+      <div class="gem-title">${escHtml(g.title)}</div>
+      <div class="gem-price">${fmt(g.total_price)}</div>
+      <div class="gem-shop">
+        <span class="source-badge" style="background:${color}">${escHtml(g.shop)}</span>
+        ${g.shipping > 0 ? `<span style="font-size:0.72rem;color:#888;margin-left:4px">+${fmt(g.shipping)} Versand</span>` : ''}
+      </div>
+      <a href="${escAttr(g.url)}" target="_blank" rel="noopener" class="btn-link" style="margin-top:4px">
+        Zum Angebot ↗
+      </a>`;
+    grid.appendChild(card);
+  });
+  section.style.display = 'block';
+}
+
+// ---------------------------------------------------------------------------
+// Ergebnis-Tabelle
+// ---------------------------------------------------------------------------
+function renderResults(results) {
+  const section = document.getElementById('results-section');
+  if (!results || results.length === 0) {
+    section.style.display = 'block';
+    document.getElementById('table-wrap').querySelector('table').style.display = 'none';
+    document.getElementById('no-results').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('table-wrap').querySelector('table').style.display = '';
+  document.getElementById('no-results').style.display = 'none';
+  document.getElementById('results-title').textContent =
+    `Alle Ergebnisse (${results.length})`;
+
+  const tbody = document.getElementById('results-body');
+  tbody.innerHTML = '';
+
+  results.forEach((r, i) => {
+    const rank = i + 1;
+    const color = sourceColors[r.source] || '#888';
+    const isBest = rank === 1;
+    const img = r.image_url
+      ? `<img src="${r.image_url}" class="thumb" onerror="this.parentNode.innerHTML='<div class=\\"thumb-ph\\">📦</div>'" loading="lazy">`
+      : '<div class="thumb-ph">📦</div>';
+    const cond = r.condition && r.condition !== 'neu'
+      ? `<span class="cond-badge gebraucht">${escHtml(r.condition)}</span>` : '';
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="rank-cell ${rank === 1 ? 'rank-1' : ''}">${rank === 1 ? '★' : rank}</td>
+      <td>${img}</td>
+      <td class="title-cell">
+        <div class="title-text">${escHtml(r.title)}</div>
+        ${cond}
+      </td>
+      <td class="price-cell ${isBest ? 'price-best' : ''}">
+        <div class="price-main">${fmt(r.total_price)}</div>
+        ${r.shipping > 0
+          ? `<div class="price-ship">+${fmt(r.shipping)} Versand</div>`
+          : '<div class="price-ship" style="color:#27ae60">✓ Kostenlos</div>'}
+      </td>
+      <td class="price-cell">
+        <div style="font-size:0.9rem;color:#555">${fmt(r.price)}</div>
+      </td>
+      <td>
+        <span class="source-badge" style="background:${color}">${escHtml(r.shop)}</span>
+      </td>
+      <td>
+        <a href="${escAttr(r.url)}" target="_blank" rel="noopener" class="btn-link">
+          Zum Angebot ↗
+        </a>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+
+  section.style.display = 'block';
+}
+
+// ---------------------------------------------------------------------------
+// Filter
+// ---------------------------------------------------------------------------
+function applyFilters() {
+  const minVal = parseFloat(document.getElementById('filter-min').value) || 0;
+  const maxVal = parseFloat(document.getElementById('filter-max').value) || Infinity;
+  const cond = document.getElementById('filter-cond').value;
+
+  let filtered = allResults.filter(r => {
+    if (r.total_price < minVal || r.total_price > maxVal) return false;
+    if (cond && r.condition !== cond) return false;
+    return true;
+  });
+
+  filtered = sortResults(filtered);
+  renderResults(filtered);
+}
+
+// ---------------------------------------------------------------------------
+// Sortierung
+// ---------------------------------------------------------------------------
+function sortBy(col) {
+  if (sortCol === col) {
+    sortAsc = !sortAsc;
+  } else {
+    sortCol = col;
+    sortAsc = col === 'total_price' || col === 'price';
+  }
+  document.querySelectorAll('thead th').forEach(th => {
+    th.classList.remove('sorted-asc', 'sorted-desc');
+    if (th.dataset.col === col) th.classList.add(sortAsc ? 'sorted-asc' : 'sorted-desc');
+  });
+  const minVal = parseFloat(document.getElementById('filter-min').value) || 0;
+  const maxVal = parseFloat(document.getElementById('filter-max').value) || Infinity;
+  const cond = document.getElementById('filter-cond').value;
+  let filtered = allResults.filter(r => {
+    if (r.total_price < minVal || r.total_price > maxVal) return false;
+    if (cond && r.condition !== cond) return false;
+    return true;
+  });
+  renderResults(sortResults(filtered));
+}
+
+function sortResults(arr) {
+  return [...arr].sort((a, b) => {
+    let av = a[sortCol] ?? '';
+    let bv = b[sortCol] ?? '';
+    if (typeof av === 'number') return sortAsc ? av - bv : bv - av;
+    return sortAsc
+      ? String(av).localeCompare(String(bv), 'de')
+      : String(bv).localeCompare(String(av), 'de');
+  });
+}
+
+// ---------------------------------------------------------------------------
+// XSS-Schutz
+// ---------------------------------------------------------------------------
+function escHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+function escAttr(s) {
+  const url = String(s ?? '');
+  if (!url.startsWith('http://') && !url.startsWith('https://')) return '#';
+  return escHtml(url);
+}
+</script>
+</body>
+</html>
